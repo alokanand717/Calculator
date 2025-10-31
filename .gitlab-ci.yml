@@ -1,0 +1,107 @@
+stages:
+  - test
+  - sonar
+  - build
+  - docker_build
+  - docker_push
+  - deploy
+
+variables:
+  DOCKER_IMAGE: "deb2511/calculator-app"
+  SONAR_HOST_URL: "http://<your-sonarqube-host>:9000"
+  SONAR_PROJECT_KEY: "calculator-app"
+  SONAR_LOGIN: "$SONAR_TOKEN"
+
+cache:
+  paths:
+    - node_modules/
+
+# ----------------------
+# Stage 1: Unit Testing
+# ----------------------
+test:
+  stage: test
+  image: node:20
+  script:
+    - npm ci
+    - npm run test -- --run
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+
+# ----------------------
+# Stage 2: SonarQube Scan
+# ----------------------
+sonarqube-check:
+  stage: sonar
+  image: sonarsource/sonar-scanner-cli:latest
+  script:
+    - sonar-scanner \
+        -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+        -Dsonar.sources=./src \
+        -Dsonar.tests=./tests \
+        -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.login=$SONAR_LOGIN
+  allow_failure: true  # Optional: won't break pipeline
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ----------------------
+# Stage 3: Build for GitLab Pages
+# ----------------------
+build:
+  stage: build
+  image: node:20
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+
+# ----------------------
+# Stage 4: Docker Build
+# ----------------------
+docker_build:
+  stage: docker_build
+  image: docker:25.0.3
+  services:
+    - docker:dind
+  script:
+    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA .
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ----------------------
+# Stage 5: Docker Push
+# ----------------------
+docker_push:
+  stage: docker_push
+  image: docker:25.0.3
+  services:
+    - docker:dind
+  script:
+    - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+    - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+# ----------------------
+# Stage 6: GitLab Pages Deploy
+# ----------------------
+pages:
+  stage: deploy
+  image: node:20
+  script:
+    - npm ci
+    - npm run build
+    - mv dist public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
+
