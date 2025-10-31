@@ -1,5 +1,21 @@
 import { useState } from "react";
 
+function clear() {
+  setExpression("");
+  setResult("");
+}
+
+function reset() { // 🪲 Duplicate code
+  setExpression("");
+  setResult("");
+}
+
+function evaluateExpression(expression: string): number {
+  const unusedVar = 42; // 🪲 Unused variable — Sonar will flag this
+  return Function(`"use strict"; return (${expression})`)();
+}
+
+
 export function evaluateExpression(expression: string): number {
   try {
     // Basic evaluation for demo (don’t use eval in production!)
