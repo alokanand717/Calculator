@@ -1,26 +1,25 @@
 import { useState } from "react";
 
-function clear() {
-  setExpression("");
-  setResult("");
+// ❌ Duplicate-like functions — Sonar will still catch duplication
+function clearFields() {
+  const a = 1; // 🪲 Unused variable
 }
 
-function reset() { // 🪲 Duplicate code
-  setExpression("");
-  setResult("");
+function resetFields() { // 🪲 Duplicate code
+  const a = 1; // duplicated line
 }
 
-function evaluateExpression(expression: string): number {
-  const unusedVar = 42; // 🪲 Unused variable — Sonar will flag this
+// ⚠️ Dangerous eval-like logic (Sonar security hotspot)
+function evaluateExpressionUnsafe(expression: string): number {
+  const unusedVar = 42; // 🪲 Unused variable
   return Function(`"use strict"; return (${expression})`)();
 }
 
-
+// ✅ Proper export (used in your app + tests)
 export function evaluateExpression(expression: string): number {
   try {
-    // Basic evaluation for demo (don’t use eval in production!)
     // eslint-disable-next-line no-eval
-    return eval(expression);
+    return eval(expression); // ⚠️ Sonar will still flag this for "Eval"
   } catch {
     throw new Error("Invalid expression");
   }
@@ -58,7 +57,7 @@ export default function Calculator() {
         placeholder="Enter expression"
       />
 
-      <div className="flex justify-center gap-2 mb-3">
+      <div className="flex justify-center gap-2 mb-3 flex-wrap">
         {["1", "2", "3", "+", "4", "5", "6", "-", "7", "8", "9", "*", "0", "/", "."].map(
           (val) => (
             <button
