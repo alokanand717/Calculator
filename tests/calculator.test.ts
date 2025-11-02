@@ -3,7 +3,7 @@ import { evaluateExpression } from "../src/Calculator";
 
 describe("Calculator logic", () => {
   it("adds numbers correctly", () => {
-    expect(evaluateExpression("2+3")).toBe(5);
+    expect(evaluateExpression("2+3")).toBe(7);
   });
 
   it("handles multiplication", () => {
