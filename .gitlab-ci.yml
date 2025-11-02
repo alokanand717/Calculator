@@ -3,7 +3,6 @@ stages:
   - sonar
   - build
   - docker_build
-  - docker_push
   - deploy
 
 variables:
@@ -63,31 +62,22 @@ build:
     expire_in: 1 hour
 
 # ----------------------
-# Stage 4: Docker Build
+# Stage 4: Docker Build & Push
 # ----------------------
-docker_build:
+docker_build_and_push:
   stage: docker_build
   image: docker:25.0.3
   services:
     - docker:dind
-  script:
-    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA .
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-
-# ----------------------
-# Stage 5: Docker Push
-# ----------------------
-docker_push:
-  stage: docker_push
-  image: docker:25.0.3
-  services:
-    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
   script:
     - echo "$DOCKER_HUB_PASSWORD" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
+    - docker build -t $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA .
     - docker push $DOCKER_IMAGE:$CI_COMMIT_SHORT_SHA
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+
 
 # ----------------------
 # Stage 6: GitLab Pages Deploy
