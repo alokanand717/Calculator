@@ -4,10 +4,14 @@ const calculator = {
     },
     subtract: function(a, b) {
         return a - b;
+    },
+    // SMELL: This is exactly the same as 'add' above!
+    // Sonar will flag this as "Duplicated Code"
+    addition: function(a, b) {
+        return a + b;
     }
 };
 
-// Export for Node.js (Jest), but keep it compatible with the Browser
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = calculator;
 }
